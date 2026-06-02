@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:timed": "node -e \"const s=Date.now();const {execSync}=require('child_process');try{execSync('next build',{stdio:'inherit'})}finally{const ms=Date.now()-s;const mins=Math.floor(ms/60000);const secs=((ms%60000)/1000).toFixed(1);console.log('\\n⏱  Build time: '+mins+'m '+secs+'s ('+ms+'ms)')}\"",
     "build:timed": "node -e \"const s=Date.now();const {execSync}=require('child_process');try{execSync('next build',{stdio:'inherit'})}finally{const ms=Date.now()-s;console.log('\\nBuild time: '+(ms/1000).toFixed(1)+'s')}\"",
     "start": "next start",
     "analyze": "ANALYZE=true next build && node scripts/analyze-bundle.mjs",
@@ -24,9 +23,9 @@
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "5.2.2",
-    "@prisma/client": "^6.19.2",
+    "@prisma/client": "6.19.3",
     "@radix-ui/react-slot": "^1.2.4",
-    "@sentry/nextjs": "^8.0.0",
+    "@sentry/nextjs": "10.55.0",
     "@stellar/stellar-sdk": "^15.1.0",
     "@tanstack/react-query": "5.100.5",
     "@tanstack/react-query-devtools": "5.100.5",
@@ -40,9 +39,8 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.576.0",
-    "next": "^16.2.4",
+    "next": "16.2.7",
     "next-intl": "^4.8.3",
-    "next-pwa": "^5.6.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "react-force-graph-2d": "1.29.1",
@@ -53,7 +51,7 @@
     "zustand": "5.0.12"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.4",
+    "@next/bundle-analyzer": "16.2.7",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -68,15 +66,21 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "jest-axe": "10.0.0",
     "jsdom": "29.1.1",
-    "prisma": "6.19.2",
+    "prisma": "6.19.3",
     "tailwindcss": "4.1.18",
     "typescript": "5.9.3",
     "typescript-eslint": "8.57.2",
+    "vite": "8.0.16",
     "vitest": "4.1.5",
     "vitest-axe": "1.0.0-pre.5"
   },
   "packageManager": "pnpm@10.30.0+sha512.2b5753de015d480eeb88f5b5b61e0051f05b4301808a82ec8b840c9d2adf7748eb352c83f5c1593ca703ff1017295bc3fdd3119abb9686efc96b9fcb18200937",
   "overrides": {
-    "dompurify": "^3.4.1"
+    "axios": "1.16.1",
+    "dompurify": "^3.4.1",
+    "postcss": "^8.5.10",
+    "serialize-javascript": "^7.0.5",
+    "uuid": "^11.1.1",
+    "vite": "8.0.16"
   }
 }

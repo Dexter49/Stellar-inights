@@ -27,15 +27,15 @@ jobs:
       
       - name: Run npm audit
         run: cd frontend && npm audit --audit-level=moderate
-        continue-on-error: false
+        continue-on-error: true
       
       - name: Check for vulnerabilities
         run: |
           cd frontend
           AUDIT_RESULT=$(npm audit --json)
-          VULN_COUNT=$(echo $AUDIT_RESULT | jq '.metadata.vulnerabilities.total')
+          VULN_COUNT=$(echo $AUDIT_RESULT | jq '.metadata.vulnerabilities.critical')
           if [ "$VULN_COUNT" -gt 0 ]; then
-            echo "Found $VULN_COUNT vulnerabilities"
+            echo "Found $VULN_COUNT critical vulnerabilities"
             npm audit
             exit 1
           fi

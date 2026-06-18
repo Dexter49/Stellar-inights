@@ -38,6 +38,7 @@ export interface UseRealtimeCorridorsOptions {
 export interface UseRealtimeCorridorsReturn {
   isConnected: boolean;
   isConnecting: boolean;
+  isStaleData: boolean;
   connectionAttempts: number;
   corridorUpdates: Map<string, CorridorUpdate>;
   healthAlerts: HealthAlert[];
@@ -114,11 +115,13 @@ export function useRealtimeCorridors(
   const {
     isConnected,
     isConnecting,
+    isStaleData,
     connectionAttempts,
     subscribe,
     unsubscribe,
     reconnect,
   } = useWebSocket(wsUrl, {
+    staleDataThreshold: 30000, // 30 seconds without updates = stale
     onMessage: handleMessage,
     onOpen: () => {
       logger.debug("Connected to corridor WebSocket");
@@ -132,6 +135,9 @@ export function useRealtimeCorridors(
     },
     onError: (error) => {
       logger.error("Corridor WebSocket error:", error);
+    },
+    onStaleData: () => {
+      logger.warn("Corridor data is stale - consider fetching snapshot");
     },
   });
 
@@ -171,6 +177,7 @@ export function useRealtimeCorridors(
   return {
     isConnected,
     isConnecting,
+    isStaleData,
     connectionAttempts,
     corridorUpdates,
     healthAlerts,

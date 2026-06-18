@@ -6,6 +6,7 @@ export enum ConnectionState {
   CONNECTING = "CONNECTING",
   CONNECTED = "CONNECTED",
   RECONNECTING = "RECONNECTING",
+  STALE_DATA = "STALE_DATA",
 }
 
 export interface WsMessage {
@@ -16,16 +17,20 @@ export interface WsMessage {
 export interface UseWebSocketOptions {
   reconnectInterval?: number;
   maxReconnectAttempts?: number;
+  staleDataThreshold?: number; // ms without message before marking as stale
   onOpen?: () => void;
   onClose?: () => void;
   onError?: (error: Event) => void;
   onMessage?: (message: WsMessage) => void;
+  onStaleData?: () => void;
 }
 
 export interface UseWebSocketReturn {
   isConnected: boolean;
   isConnecting: boolean;
+  isStaleData: boolean;
   lastMessage: WsMessage | null;
+  lastMessageTime: number | null;
   connectionAttempts: number;
   send: (message: WsMessage) => void;
   subscribe: (channels: string[]) => void;
@@ -40,15 +45,19 @@ export function useWebSocket(
   const {
     reconnectInterval = 3000,
     maxReconnectAttempts = 5,
+    staleDataThreshold = 30000, // 30s default
     onOpen,
     onClose,
     onError,
     onMessage,
+    onStaleData,
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isStaleData, setIsStaleData] = useState(false);
   const [lastMessage, setLastMessage] = useState<WsMessage | null>(null);
+  const [lastMessageTime, setLastMessageTime] = useState<number | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [connectionState, setConnectionState] = useState<ConnectionState>(
     ConnectionState.DISCONNECTED
@@ -56,6 +65,7 @@ export function useWebSocket(
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const staleDataTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shouldReconnectRef = useRef(true);
   const isConnectingRef = useRef(false);
 

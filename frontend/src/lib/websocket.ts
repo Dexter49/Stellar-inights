@@ -2,6 +2,7 @@
  * WebSocket client for real-time updates from the Stellar Insights backend
  */
 import { logger } from "@/lib/logger";
+import { config } from "@/config";
 
 export type WsMessageType =
   | "snapshot_update"
@@ -99,15 +100,7 @@ export class StellarInsightsWebSocket {
    * Get the default WebSocket URL based on the current environment
    */
   private getDefaultWsUrl(): string {
-    if (typeof window === "undefined") {
-      return "ws://localhost:8080/ws";
-    }
-
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
-    const port = process.env.NEXT_PUBLIC_WS_PORT || "8080";
-
-    return `${protocol}//${host}:${port}/ws`;
+    return config.wsUrl;
   }
 
   /**

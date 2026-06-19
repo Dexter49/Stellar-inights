@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { logger } from "@/lib/logger";
+import {
+  WsMessage as ValidatedWsMessage,
+  parseWebSocketMessage,
+} from "@/lib/websocket-message-parser";
 
 export enum ConnectionState {
   DISCONNECTED = "DISCONNECTED",
@@ -8,10 +12,8 @@ export enum ConnectionState {
   RECONNECTING = "RECONNECTING",
 }
 
-export interface WsMessage {
-  type: string;
-  [key: string]: string | number | boolean | null | undefined | string[] | Record<string, unknown>;
-}
+// For backward compatibility with code that uses the generic type
+export type WsMessage = ValidatedWsMessage | { type: string; [key: string]: unknown };
 
 export interface UseWebSocketOptions {
   reconnectInterval?: number;
@@ -119,7 +121,14 @@ export function useWebSocket(
 
       ws.onmessage = (event) => {
         try {
-          const message: WsMessage = JSON.parse(event.data);
+          const parsedData = JSON.parse(event.data);
+          const message = parseWebSocketMessage(parsedData);
+
+          // Ignore malformed messages
+          if (!message) {
+            return;
+          }
+
           setLastMessage(message);
           onMessage?.(message);
         } catch (error) {

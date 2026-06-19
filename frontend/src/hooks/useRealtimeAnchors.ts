@@ -2,6 +2,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useWebSocket, WsMessage } from "./useWebSocket";
 import { logger } from "@/lib/logger";
 import { config } from "@/config";
+import {
+  isAnchorUpdate,
+  isSubscriptionConfirm,
+} from "@/lib/websocket-message-parser";
 
 export interface AnchorUpdate {
   anchor_id: string;
@@ -39,28 +43,15 @@ export function useRealtimeAnchors(
 
   const handleMessage = useCallback(
     (message: WsMessage) => {
-      switch (message.type) {
-        case "anchor_update":
-          const anchorUpdate = message as AnchorUpdate;
-          setAnchorUpdates((prev) => {
-            const newMap = new Map(prev);
-            newMap.set(anchorUpdate.anchor_id, anchorUpdate);
-            return newMap;
-          });
-          onAnchorUpdate?.(anchorUpdate);
-          break;
-
-        case "subscription_confirm":
-          logger.debug("Anchor subscription confirmed:", message);
-          break;
-
-        case "ping":
-          // Handle ping/pong automatically
-          break;
-
-        default:
-          // Ignore other message types
-          break;
+      if (isAnchorUpdate(message)) {
+        setAnchorUpdates((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(message.anchor_id, message);
+          return newMap;
+        });
+        onAnchorUpdate?.(message);
+      } else if (isSubscriptionConfirm(message)) {
+        logger.debug("Anchor subscription confirmed");
       }
     },
     [onAnchorUpdate],

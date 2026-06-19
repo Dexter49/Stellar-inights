@@ -2,6 +2,12 @@ import { useEffect, useState, useCallback } from "react";
 import { useWebSocket, WsMessage } from "./useWebSocket";
 import { logger } from "@/lib/logger";
 import { config } from "@/config";
+import {
+  isCorridorUpdate,
+  isHealthAlert,
+  isNewPayment,
+  isSubscriptionConfirm,
+} from "@/lib/websocket-message-parser";
 
 export interface CorridorUpdate {
   corridor_key: string;
@@ -72,41 +78,25 @@ export function useRealtimeCorridors(
 
   const handleMessage = useCallback(
     (message: WsMessage) => {
-      switch (message.type) {
-        case "corridor_update":
-          const corridorUpdate = message as CorridorUpdate;
-          setCorridorUpdates((prev) => {
-            const newMap = new Map(prev);
-            newMap.set(corridorUpdate.corridor_key, corridorUpdate);
-            return newMap;
-          });
-          onCorridorUpdate?.(corridorUpdate);
-          break;
-
-        case "health_alert":
-          const healthAlert = message as HealthAlert;
-          setHealthAlerts((prev) => [healthAlert, ...prev].slice(0, 50)); // Keep last 50 alerts
-          onHealthAlert?.(healthAlert);
-          break;
-
-        case "new_payment":
-          if (enablePaymentStream) {
-            const payment = message as NewPayment;
-            setRecentPayments((prev) => [payment, ...prev].slice(0, 100)); // Keep last 100 payments
-            onNewPayment?.(payment);
-          }
-          break;
-
-        case "subscription_confirm":
-          logger.debug("Subscription confirmed:", message);
-          break;
-
-        case "ping":
-          // Handle ping/pong automatically
-          break;
-
-        default:
-          logger.debug("Unhandled WebSocket message:", message);
+      if (isCorridorUpdate(message)) {
+        setCorridorUpdates((prev) => {
+          const newMap = new Map(prev);
+          newMap.set(message.corridor_key, message);
+          return newMap;
+        });
+        onCorridorUpdate?.(message);
+      } else if (isHealthAlert(message)) {
+        setHealthAlerts((prev) => [message, ...prev].slice(0, 50));
+        onHealthAlert?.(message);
+      } else if (isNewPayment(message)) {
+        if (enablePaymentStream) {
+          setRecentPayments((prev) => [message, ...prev].slice(0, 100));
+          onNewPayment?.(message);
+        }
+      } else if (isSubscriptionConfirm(message)) {
+        logger.debug("Subscription confirmed");
+      } else if (message.type !== "ping") {
+        logger.debug("Unhandled WebSocket message type:", message.type);
       }
     },
     [enablePaymentStream, onCorridorUpdate, onHealthAlert, onNewPayment],

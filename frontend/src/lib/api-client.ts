@@ -1,9 +1,15 @@
 /**
- * API Client with CSRF Protection
- * 
+ * API Client with CSRF Protection and Distributed Tracing
+ *
  * Provides type-safe API methods with automatic CSRF token handling
- * for all state-changing operations.
+ * for all state-changing operations, and trace context injection for
+ * distributed tracing across services.
  */
+
+import {
+  getOrCreateTraceContext,
+  formatTraceparentHeader
+} from './telemetry';
 
 interface ApiOptions extends RequestInit {
   skipCsrf?: boolean;
@@ -30,16 +36,25 @@ function getCsrfToken(): string | null {
 }
 
 /**
- * Base fetch wrapper with CSRF protection
+ * Base fetch wrapper with CSRF protection and trace context injection
  */
 async function apiFetch(url: string, options: ApiOptions = {}): Promise<Response> {
   const { skipCsrf = false, headers = {}, ...restOptions } = options;
-  
+
   const requestHeaders: HeadersInit = {
     'Content-Type': 'application/json',
     ...headers,
   };
-  
+
+  // Add trace context for distributed tracing
+  try {
+    const traceContext = getOrCreateTraceContext();
+    const traceparent = formatTraceparentHeader(traceContext);
+    requestHeaders['traceparent'] = traceparent;
+  } catch (e) {
+    console.warn('Failed to inject trace context:', e);
+  }
+
   // Add CSRF token for state-changing methods
   const method = options.method?.toUpperCase();
   if (!skipCsrf && method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
